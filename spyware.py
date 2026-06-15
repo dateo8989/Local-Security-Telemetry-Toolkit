@@ -8,9 +8,7 @@ import time
 import threading
 from datetime import datetime
 
-# =============================
-# DB
-# =============================
+
 
 DB = "siem_core.db"
 
@@ -43,9 +41,7 @@ def init():
     c.commit()
     c.close()
 
-# =============================
-# SECURITY
-# =============================
+
 
 def salt():
     return uuid.uuid4().hex
@@ -53,9 +49,7 @@ def salt():
 def hashpw(pw, s):
     return hashlib.pbkdf2_hmac("sha256", pw.encode(), s.encode(), 120000).hex()
 
-# =============================
-# AUTH
-# =============================
+
 
 def register(u, p):
     c = db()
@@ -100,9 +94,7 @@ def login(u, p):
 
     return True, session
 
-# =============================
-# SIEM ENGINE
-# =============================
+
 
 class SIEMEngine:
     def __init__(self, user):
@@ -139,9 +131,7 @@ class SIEMEngine:
     def stop(self):
         self.running = False
 
-# =============================
-# GLOBAL STATE
-# =============================
+
 
 STATE = {
     "user": None,
@@ -149,9 +139,7 @@ STATE = {
     "engine": None
 }
 
-# =============================
-# UI
-# =============================
+
 
 class Login:
     def __init__(self, root):
@@ -186,9 +174,7 @@ class Login:
         self.root.destroy()
         dashboard()
 
-# =============================
-# DASHBOARD
-# =============================
+
 
 def dashboard():
     root = tk.Tk()
@@ -232,9 +218,7 @@ def dashboard():
 
     root.mainloop()
 
-# =============================
-# BOOT
-# =============================
+
 
 if __name__ == "__main__":
     init()
