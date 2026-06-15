@@ -1,4 +1,5 @@
-!Spyware!
+Local Security Telemetry Toolkit!
+
 This is my custom spyware I have coded to try and gain the CIA attention to see if I can get a job!
 
 to run this first you must install the requirments it is a bat file named install requirmenst .bat !
