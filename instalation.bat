@@ -2,9 +2,9 @@
 title SOC Console Installer
 color 0A
 
-echo ======================================
-echo  SOC CONSOLE AUTO INSTALLER
-echo ======================================
+echo 
+echo  SSPYWARE.PY AUTO INSTALLER
+echo 
 echo.
 
 REM Step 1 - Check Python
@@ -42,11 +42,11 @@ pip install datetime
 pip install uuid
 pip install hashlib
 
-REM Step 6 - Done
+REM Step 6 - Done bruda now uh idk go hack something
 echo.
-echo ======================================
+echo 
 echo  INSTALL COMPLETE
-echo ======================================
+echo 
 echo.
 
 echo To run your app:
