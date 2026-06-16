@@ -13,9 +13,7 @@ from pynput.keyboard import Key, Listener
 import os
 import socket
 
-# =============================
-# DB
-# =============================
+
 
 DB = "siem_core.db"
 
@@ -72,9 +70,7 @@ def init():
     c.commit()
     c.close()
 
-# =============================
-# SECURITY
-# =============================
+
 
 def salt():
     return uuid.uuid4().hex
@@ -82,9 +78,7 @@ def salt():
 def hashpw(pw, s):
     return hashlib.pbkdf2_hmac("sha256", pw.encode(), s.encode(), 120000).hex()
 
-# =============================
-# AUTH
-# =============================
+
 
 def register(u, p):
     c = db()
@@ -129,9 +123,7 @@ def login(u, p):
 
     return True, session
 
-# =============================
-# KEYLOGGER
-# =============================
+
 
 def on_press(key):
     c = db()
@@ -149,9 +141,6 @@ def start_keylogger():
     listener = Listener(on_press=on_press)
     listener.start()
 
-# =============================
-# SCREEN CAPTURE
-# =============================
 
 def take_screenshot():
     screenshot = pyautogui.screenshot()
@@ -171,9 +160,7 @@ def start_screenshot():
         take_screenshot()
         time.sleep(60)
 
-# =============================
-# FILE MONITORING
-# =============================
+
 
 def monitor_files():
     while True:
@@ -191,9 +178,7 @@ def monitor_files():
                     c.close()
         time.sleep(60)
 
-# =============================
-# NETWORK MONITORING
-# =============================
+
 
 def monitor_network():
     while True:
@@ -216,9 +201,7 @@ def monitor_network():
         s.close()
         time.sleep(60)
 
-# =============================
-# SIEM ENGINE
-# =============================
+
 
 class SIEMEngine:
     def __init__(self, user):
@@ -255,9 +238,7 @@ class SIEMEngine:
     def stop(self):
         self.running = False
 
-# =============================
-# GLOBAL STATE
-# =============================
+
 
 STATE = {
     "user": None,
@@ -265,9 +246,7 @@ STATE = {
     "engine": None
 }
 
-# =============================
-# UI
-# =============================
+
 
 class Login:
     def __init__(self, root):
@@ -302,9 +281,7 @@ class Login:
         self.root.destroy()
         dashboard()
 
-# =============================
-# DASHBOARD
-# =============================
+
 
 def dashboard():
     root = tk.Tk()
@@ -352,9 +329,7 @@ def dashboard():
 
     root.mainloop()
 
-# =============================
-# BOOT
-# =============================
+
 
 if __name__ == "__main__":
     init()
