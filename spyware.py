@@ -13,63 +13,76 @@ from pynput.keyboard import Key, Listener
 import os
 import socket
 
+DB_NAME = "siem_core.db"
 
 
-DB = "siem_core.db"
+def create_connection():
+    return sqlite3.connect(DB_NAME)
 
-def db():
-    return sqlite3.connect(DB)
+def init_db():
+    conn = create_connection()
+    cur = conn.cursor()
 
-def init():
-    c = db()
-    cur = c.cursor()
+    
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            username TEXT UNIQUE,
+            password TEXT,
+            salt TEXT,
+            role TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS users(
-        username TEXT UNIQUE,
-        password TEXT,
-        salt TEXT,
-        role TEXT
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS audit (
+            ts TEXT,
+            user TEXT,
+            event TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS audit(
-        ts TEXT,
-        user TEXT,
-        event TEXT
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS sessions (
+            session TEXT,
+            user TEXT,
+            ts TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS sessions(
-        session TEXT,
-        user TEXT,
-        ts TEXT
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS keystrokes (
+            ts TEXT,
+            user TEXT,
+            keystroke TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS keystrokes(
-        ts TEXT,
-        user TEXT,
-        keystroke TEXT
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS screenshots (
+            ts TEXT,
+            user TEXT,
+            screenshot BLOB
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS screenshots(
-        ts TEXT,
-        user TEXT,
-        screenshot BLOB
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS file_changes (
+            ts TEXT,
+            user TEXT,
+            file_change TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS file_changes(
-        ts TEXT,
-        user TEXT,
-        file_change TEXT
-    )""")
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS network_activity (
+            ts TEXT,
+            user TEXT,
+            network_activity TEXT
+        )
+    """)
 
-    cur.execute("""CREATE TABLE IF NOT EXISTS network_activity(
-        ts TEXT,
-        user TEXT,
-        network_activity TEXT
-    )""")
-
-    c.commit()
-    c.close()
-
+    conn.commit()
+    conn.close()
 
 
 def salt():
@@ -79,27 +92,26 @@ def hashpw(pw, s):
     return hashlib.pbkdf2_hmac("sha256", pw.encode(), s.encode(), 120000).hex()
 
 
-
 def register(u, p):
-    c = db()
-    cur = c.cursor()
+    conn = create_connection()
+    cur = conn.cursor()
 
     s = salt()
     try:
-        cur.execute("INSERT INTO users VALUES (?,?,?,?)",
-                    (u, hashpw(p, s), s, "operator"))
-        c.commit()
+        cur.execute("INSERT INTO users VALUES (?,?,?,?)", (u, hashpw(p, s), s, "operator"))
+        conn.commit()
         return True
-    except:
+    except sqlite3.Error as e:
+        print(f"Error registering user: {e}")
         return False
     finally:
-        c.close()
+        conn.close()
 
 def login(u, p):
-    c = db()
-    cur = c.cursor()
+    conn = create_connection()
+    cur = conn.cursor()
 
-    cur.execute("SELECT password,salt FROM users WHERE username=?", (u,))
+    cur.execute("SELECT password, salt FROM users WHERE username=?", (u,))
     row = cur.fetchone()
 
     if not row:
@@ -112,73 +124,56 @@ def login(u, p):
 
     session = str(uuid.uuid4())
 
-    cur.execute("INSERT INTO sessions VALUES (?,?,?)",
-                (session, u, str(datetime.utcnow())))
+    cur.execute("INSERT INTO sessions VALUES (?,?,?)", (session, u, str(datetime.utcnow())))
 
-    cur.execute("INSERT INTO audit VALUES (?,?,?)",
-                (str(datetime.utcnow()), u, "LOGIN"))
+    cur.execute("INSERT INTO audit VALUES (?,?,?)", (str(datetime.utcnow()), u, "LOGIN"))
 
-    c.commit()
-    c.close()
+    conn.commit()
+    conn.close()
 
     return True, session
 
-
-
 def on_press(key):
-    c = db()
-    cur = c.cursor()
-    try:
-        cur.execute("INSERT INTO keystrokes VALUES (?,?,?)",
-                    (str(datetime.utcnow()), STATE["user"], str(key)))
-        c.commit()
-    except:
-        pass
-    finally:
-        c.close()
+    conn = create_connection()
+    cur = conn.cursor()
 
-def start_keylogger():
-    listener = Listener(on_press=on_press)
-    listener.start()
+    try:
+        cur.execute("INSERT INTO keystrokes VALUES (?,?,?)", (str(datetime.utcnow()), STATE["user"], str(key)))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error logging keystroke: {e}")
+    finally:
+        conn.close()
 
 
 def take_screenshot():
     screenshot = pyautogui.screenshot()
-    c = db()
-    cur = c.cursor()
+    conn = create_connection()
+    cur = conn.cursor()
+
     try:
-        cur.execute("INSERT INTO screenshots VALUES (?,?,?)",
-                    (str(datetime.utcnow()), STATE["user"], screenshot))
-        c.commit()
-    except:
-        pass
+        cur.execute("INSERT INTO screenshots VALUES (?,?,?)", (str(datetime.utcnow()), STATE["user"], screenshot))
+        conn.commit()
+    except sqlite3.Error as e:
+        print(f"Error capturing screenshot: {e}")
     finally:
-        c.close()
-
-def start_screenshot():
-    while True:
-        take_screenshot()
-        time.sleep(60)
-
-
+        conn.close()
 
 def monitor_files():
     while True:
         for root, dirs, files in os.walk("/"):
             for file in files:
-                c = db()
-                cur = c.cursor()
+                conn = create_connection()
+                cur = conn.cursor()
+
                 try:
-                    cur.execute("INSERT INTO file_changes VALUES (?,?,?)",
-                                (str(datetime.utcnow()), STATE["user"], file))
-                    c.commit()
-                except:
-                    pass
+                    cur.execute("INSERT INTO file_changes VALUES (?,?,?)", (str(datetime.utcnow()), STATE["user"], file))
+                    conn.commit()
+                except sqlite3.Error as e:
+                    print(f"Error monitoring file: {e}")
                 finally:
-                    c.close()
+                    conn.close()
         time.sleep(60)
-
-
 
 def monitor_network():
     while True:
@@ -187,21 +182,19 @@ def monitor_network():
         s.listen(1)
         conn, addr = s.accept()
         data = conn.recv(1024)
-        c = db()
-        cur = c.cursor()
+        conn = create_connection()
+        cur = conn.cursor()
+
         try:
-            cur.execute("INSERT INTO network_activity VALUES (?,?,?)",
-                        (str(datetime.utcnow()), STATE["user"], data))
-            c.commit()
-        except:
-            pass
+            cur.execute("INSERT INTO network_activity VALUES (?,?,?)", (str(datetime.utcnow()), STATE["user"], data))
+            conn.commit()
+        except sqlite3.Error as e:
+            print(f"Error monitoring network: {e}")
         finally:
-            c.close()
+            conn.close()
         conn.close()
         s.close()
         time.sleep(60)
-
-
 
 class SIEMEngine:
     def __init__(self, user):
@@ -238,15 +231,11 @@ class SIEMEngine:
     def stop(self):
         self.running = False
 
-
-
 STATE = {
     "user": None,
     "session": None,
     "engine": None
 }
-
-
 
 class Login:
     def __init__(self, root):
@@ -280,8 +269,6 @@ class Login:
 
         self.root.destroy()
         dashboard()
-
-
 
 def dashboard():
     root = tk.Tk()
@@ -329,10 +316,9 @@ def dashboard():
 
     root.mainloop()
 
-
-
+# Boot function
 if __name__ == "__main__":
-    init()
+    init_db()
     root = tk.Tk()
     Login(root)
     root.mainloop()
