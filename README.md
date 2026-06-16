@@ -15,3 +15,4 @@ then your in and you can learn how to use it from there on very self explantory!
 
 script is constantly being evolved!
 
+every day i update it as much as i can!
