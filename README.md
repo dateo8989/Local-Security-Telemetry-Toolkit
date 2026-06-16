@@ -1,18 +1,15 @@
-Local Security Telemetry Toolkit!
+ Local Security Telemetry Toolkit
 
-This is my custom spyware I have coded to try and gain the CIA and MI5/6 and FBI attention to see if I can get a job!
+This is my custom spyware project that I coded to try and gain the attention of the CIA, MI5, MI6, and FBI in hopes of getting a job.
 
-to run this first you must install the requirments it is a bat file named install requirmenst .bat !
+To run it, first install the requirements using the batch file named `instilation.bat`.
 
+Next, run the script called `spyware.py`.
 
-then you must run a script called spyware.py .
+Once the program loads, you will need to create an account.
 
+After that, you're in! You can learn how to use it from there — it's very self-explanatory.
 
-then it will load you in you must make an account.
+The script is constantly being improved and evolved.
 
-
-then your in and you can learn how to use it from there on very self explantory! 
-
-script is constantly being evolved!
-
-every day i update it as much as i can!
+I update it every day and add as many new features and improvements as possible.
