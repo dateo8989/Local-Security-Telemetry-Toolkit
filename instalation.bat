@@ -32,6 +32,15 @@ REM Step 5 - Install dependencies
 echo [SETUP] Installing dependencies...
 
 pip install psutil
+pip install tkinter
+pip install pynput
+pip install pyautogui
+pip install sqlite3
+pip install socket
+pip install threading
+pip install datetime
+pip install uuid
+pip install hashlib
 
 REM Step 6 - Done
 echo.
@@ -41,7 +50,7 @@ echo ======================================
 echo.
 
 echo To run your app:
-echo   venv\Scripts\python.exe your_script.py
+echo   venv\Scripts\python.exe spyware.py
 echo.
 
 pause
