@@ -32,8 +32,7 @@ bool isProcessRunning(const std::string& processName) {
 }
 
 bool isSoftwareOutdated(const std::string& softwareName) {
-    // Simulate a check for outdated software
-    // In a real-world scenario, you would need to implement a more sophisticated check
+    
     return true;
 }
 
