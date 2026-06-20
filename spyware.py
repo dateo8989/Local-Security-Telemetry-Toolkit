@@ -12,10 +12,12 @@ import pynput
 from pynput.keyboard import Key, Listener
 import os
 import socket
+from cryptography.fernet import Fernet
+import bcrypt
 
 
 DB_NAME = "siem_core.db"
-
+SALT_ROUNDS = 12
 
 class Database:
     def __init__(self):
@@ -83,8 +85,8 @@ class Database:
         self.conn.commit()
 
     def register(self, username, password):
-        salt = uuid.uuid4().hex
-        hashed_password = hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120000).hex()
+        salt = bcrypt.gensalt(SALT_ROUNDS)
+        hashed_password = bcrypt.hashpw(password.encode(), salt)
         try:
             self.cur.execute("INSERT INTO users VALUES (?,?,?,?)", (username, hashed_password, salt, "operator"))
             self.conn.commit()
@@ -102,7 +104,7 @@ class Database:
 
         hashed_password, salt = row
 
-        if hashlib.pbkdf2_hmac("sha256", password.encode(), salt.encode(), 120000).hex() != hashed_password:
+        if not bcrypt.checkpw(password.encode(), hashed_password):
             return False, None
 
         session = str(uuid.uuid4())
@@ -120,8 +122,7 @@ def salt():
     return uuid.uuid4().hex
 
 def hashpw(pw, s):
-    return hashlib.pbkdf2_hmac("sha256", pw.encode(), s.encode(), 120000).hex()
-
+    return bcrypt.hashpw(pw.encode(), s)
 
 def on_press(key):
     db = Database()
