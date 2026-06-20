@@ -3,7 +3,7 @@ title SOC Console Installer
 color 0A
 
 echo 
-echo  SSPYWARE.PY AUTO INSTALLER
+echo  ADVANCED SIEM AUTO INSTALLER
 echo 
 echo.
 
@@ -35,14 +35,16 @@ pip install psutil
 pip install tkinter
 pip install pynput
 pip install pyautogui
-pip install sqlite3
+pip install pysqlite3
 pip install socket
 pip install threading
 pip install datetime
 pip install uuid
 pip install hashlib
+pip install bcrypt
+pip install cryptography
 
-REM Step 6 - Done bruda now uh idk go hack something
+REM Step 6 - Done bruda now uh idk go monitor something
 echo.
 echo 
 echo  INSTALL COMPLETE
@@ -50,7 +52,7 @@ echo
 echo.
 
 echo To run your app:
-echo   venv\Scripts\python.exe spyware.py
+echo   venv\Scripts\python.exe siem.py
 echo.
 
 pause
